@@ -1,0 +1,70 @@
+#!/usr/bin/env bash
+
+clear_env=
+build_env=
+start_env=
+devel_env=
+
+# Loop until all parameters are used up
+while [ "$1" != "" ]; do
+  case $1 in
+    -c | --clear )  clear_env=1
+                    ;;
+    -d | --dev )    devel_env=1
+                    ;;
+    -b | --build )  build_env=1
+                    ;;
+    -s | --start )  start_env=1
+                    ;;
+    * )             usage
+                    exit 1
+  esac
+  shift
+done
+
+
+run()
+{
+  if [ "$devel_env" = "1" ]; then
+    dev
+    exit 0
+  fi
+  if [ "$clear_env" = "1" ]; then
+    clear
+  fi
+  if [ "$build_env" = "1" ]; then
+    build
+  fi
+  if [ "$start_env" = "1" ]; then
+    start
+  fi
+}
+
+build()
+{
+  echo "building"
+  docker build ./api/ -t calendar
+}
+
+clear()
+{
+  echo "clearing"
+  docker rm $(docker ps -aq) || EXIT_CODE=$?
+  docker rmi $(docker images -q) || EXIT_CODE=$?
+}
+
+dev()
+{
+  cd api/src
+  export FLASK_ENV=development
+  export FLASK_APP=serve.py
+  flask run
+}
+
+start()
+{
+  echo "starting"
+  docker run --rm -p 8080:8080 calendar
+}
+
+run
